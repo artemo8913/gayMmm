@@ -1,4 +1,5 @@
 import React from "react";
+import { useKey } from "./useKey";
 
 interface ICanvasSettings {
   width: number;
@@ -16,7 +17,7 @@ interface ICanvasSettings {
   };
 }
 interface IUnit {
-  type: "enemy" | "ally";
+  type: "enemy" | "player";
   canvasStyle: {
     width: number;
     height: number;
@@ -26,6 +27,7 @@ interface IUnit {
     y: number;
   };
   color: string;
+  delta: number;
 }
 const canvasSettings: ICanvasSettings = {
   width: 500,
@@ -42,31 +44,28 @@ const canvasSettings: ICanvasSettings = {
     },
   },
 };
-
+const myUnitDefault: IUnit = {
+  type: "player",
+  canvasStyle: canvasSettings.defaultUnit.canvasStyle,
+  color: canvasSettings.defaultUnit.color.ally,
+  pos: {
+    x: 100,
+    y: 100,
+  },
+  delta: 5,
+};
 export function GaymPage() {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const [myUnit, setMyUnit] = React.useState<IUnit>(myUnitDefault);
+  useKey("KeyW", () => moveUp(myUnit, setMyUnit));
+  useKey("KeyA", () => moveLeft(myUnit, setMyUnit));
+  useKey("KeyD", () => moveRight(myUnit, setMyUnit));
+  useKey("KeyS", () => moveDown(myUnit, setMyUnit));
   React.useEffect(() => {
     if (canvasRef.current) {
       const ctx = canvasRef.current.getContext("2d")!;
       drawBg(ctx, canvasSettings);
-      createUnit(ctx, {
-        type: "ally",
-        canvasStyle: canvasSettings.defaultUnit.canvasStyle,
-        color: canvasSettings.defaultUnit.color.ally,
-        pos: {
-          x: 100,
-          y: 100,
-        },
-      });
-      createUnit(ctx, {
-        type: "enemy",
-        canvasStyle: canvasSettings.defaultUnit.canvasStyle,
-        color: canvasSettings.defaultUnit.color.enemy,
-        pos: {
-          x: 20,
-          y: 20,
-        },
-      });
+      drawUnit(ctx, myUnit);
     }
   });
   return <canvas ref={canvasRef}></canvas>;
@@ -79,7 +78,7 @@ function drawBg(ctx: CanvasRenderingContext2D, settings: ICanvasSettings): void 
   ctx.fill();
   ctx.closePath();
 }
-function createUnit(ctx: CanvasRenderingContext2D, settings: IUnit): void {
+function drawUnit(ctx: CanvasRenderingContext2D, settings: IUnit): void {
   const pos = {
     x: settings.pos.x - settings.canvasStyle.width / 2,
     y: settings.pos.y - settings.canvasStyle.height / 2,
@@ -89,4 +88,32 @@ function createUnit(ctx: CanvasRenderingContext2D, settings: IUnit): void {
   ctx.fillStyle = settings.color;
   ctx.fill();
   ctx.closePath();
+}
+function moveUp(unit: IUnit, setUnit: Function) {
+  const newValue = unit.pos.y - unit.delta;
+  setUnit((prev: IUnit) => ({
+    ...prev,
+    pos: { ...prev.pos, y: newValue },
+  }));
+}
+function moveLeft(unit: IUnit, setUnit: Function) {
+  const newValue = unit.pos.x - unit.delta;
+  setUnit((prev: IUnit) => ({
+    ...prev,
+    pos: { ...prev.pos, x: newValue },
+  }));
+}
+function moveRight(unit: IUnit, setUnit: Function) {
+  const newValue = unit.pos.x + unit.delta;
+  setUnit((prev: IUnit) => ({
+    ...prev,
+    pos: { ...prev.pos, x: newValue },
+  }));
+}
+function moveDown(unit: IUnit, setUnit: Function) {
+  const newValue = unit.pos.y + unit.delta;
+  setUnit((prev: IUnit) => ({
+    ...prev,
+    pos: { ...prev.pos, y: newValue },
+  }));
 }
