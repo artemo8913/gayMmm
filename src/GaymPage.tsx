@@ -52,7 +52,6 @@ const enemyDefault: IUnit = {
     y: 100,
   },
   delta: 5,
-  direction: { x: 0, y: 0 },
 };
 const bulletSettingsDefault: IBullet = {
   id: "bullet",
@@ -105,13 +104,14 @@ function drawGame(ctx: CanvasRenderingContext2D, myUnit: IUnit, enemy: IUnit, bu
   drawBg(ctx, canvasSettings);
   drawUnit(ctx, myUnit);
   drawUnit(ctx, enemy);
+  verticalMovementAI(ctx, enemy);
   for (let i = 0; i < bullets.length; i++) {
     const bullet = bullets[i];
     move(bullet);
-    if (checkCollision(bullet, enemy)) {
+    if (isCollision(bullet, enemy)) {
       hitFlashAnimation(enemy, 100, 500);
     }
-    if (checkCollision(bullet, enemy) || checkOutSide(ctx, bullet)) {
+    if (isCollision(bullet, enemy) || isOutSide(ctx, bullet)) {
       removeBullet(bullets, i);
       i--;
     }
@@ -141,7 +141,7 @@ function drawBullets(ctx: CanvasRenderingContext2D, bullets: Array<IBullet>) {
 function createBullet(bullets: Array<IBullet>, bullet: IBullet) {
   bullets.push({ ...bullet });
 }
-function checkCollision(firstGO: IGameObject, secondGO: IGameObject): boolean {
+function isCollision(firstGO: IGameObject, secondGO: IGameObject): boolean {
   let result = false;
   const topCheck = firstGO.pos.y - firstGO.height / 2 <= secondGO.pos.y + secondGO.height / 2;
   const bottomCheck = firstGO.pos.y + firstGO.height / 2 >= secondGO.pos.y - secondGO.height / 2;
@@ -162,26 +162,7 @@ function checkCollision(firstGO: IGameObject, secondGO: IGameObject): boolean {
   }
   return result;
 }
-function hitFlashAnimation(gameObject: IGameObject, flashSpeed: number, duration: number) {
-  if (!gameObject.isAnimated) {
-    gameObject.isAnimated = true;
-    const oldColor = gameObject.color;
-    const newColor = "white";
-    const id = setInterval(() => {
-      if (gameObject.color === oldColor) {
-        gameObject.color = newColor;
-      } else {
-        gameObject.color = oldColor;
-      }
-    }, flashSpeed);
-    setTimeout(() => {
-      gameObject.isAnimated = false;
-      gameObject.color = oldColor;
-      clearInterval(id);
-    }, duration);
-  }
-}
-function checkOutSide(ctx: CanvasRenderingContext2D, gO: IGameObject): boolean {
+function isOutSide(ctx: CanvasRenderingContext2D, gO: IGameObject): boolean {
   const xOutSide = gO.pos.x - gO.width / 2 >= ctx.canvas.width || gO.pos.x + gO.width / 2 <= 0;
   const yOutSide = gO.pos.y - gO.height / 2 >= ctx.canvas.height || gO.pos.y + gO.height / 2 <= 0;
   return xOutSide || yOutSide;
@@ -189,6 +170,30 @@ function checkOutSide(ctx: CanvasRenderingContext2D, gO: IGameObject): boolean {
 //splice! отсеиваю не нужные пули по индексу!
 function removeBullet(bullets: Array<IBullet>, index: number) {
   bullets.splice(index, 1);
+}
+
+function move(gO: IGameObject) {
+  gO.pos.x += gO.delta! * gO.direction!.x;
+  gO.pos.y += gO.delta! * gO.direction!.y;
+}
+function hitFlashAnimation(gO: IGameObject, flashSpeed: number, duration: number) {
+  if (!gO.isAnimated) {
+    gO.isAnimated = true;
+    const oldColor = gO.color;
+    const newColor = "white";
+    const id = setInterval(() => {
+      if (gO.color === oldColor) {
+        gO.color = newColor;
+      } else {
+        gO.color = oldColor;
+      }
+    }, flashSpeed);
+    setTimeout(() => {
+      gO.isAnimated = false;
+      gO.color = oldColor;
+      clearInterval(id);
+    }, duration);
+  }
 }
 const useKey = (key: string, callback: () => void, canUse = true) => {
   React.useEffect(() => {
@@ -204,7 +209,13 @@ const useKey = (key: string, callback: () => void, canUse = true) => {
     }
   });
 };
-function move(obj: IGameObject) {
-  obj.pos.x += obj.delta! * obj.direction!.x;
-  obj.pos.y += obj.delta! * obj.direction!.y;
+//возможно лучше сделать хук для движения
+function verticalMovementAI(ctx: CanvasRenderingContext2D, gO: IGameObject) {
+  if (!gO.direction) gO.direction = { x: 0, y: 1 };
+  if (isOutSide(ctx, { ...gO, pos: { x: gO.pos.x, y: gO.pos.y + gO.delta! * gO.direction!.y } })) {
+    console.log(gO.direction);
+    if(gO.direction.y===1) gO.direction.y = -1;
+    else if(gO.direction.y === -1) gO.direction.y = 1;
+  }
+  move(gO);
 }
