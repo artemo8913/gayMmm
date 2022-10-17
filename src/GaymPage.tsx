@@ -11,6 +11,7 @@ interface IGameObject {
   };
   delta?: number;
   direction?: { x: 1 | -1 | 0; y: 1 | -1 | 0 };
+  isAnimated?: boolean;
 }
 interface ICanvasSettings extends IGameObject {}
 interface IBullet extends IGameObject {}
@@ -101,13 +102,15 @@ function drawRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number
   ctx.closePath();
 }
 function drawGame(ctx: CanvasRenderingContext2D, myUnit: IUnit, enemy: IUnit, bullets: Array<IBullet>) {
-  console.log(bullets);
   drawBg(ctx, canvasSettings);
   drawUnit(ctx, myUnit);
   drawUnit(ctx, enemy);
   for (let i = 0; i < bullets.length; i++) {
     const bullet = bullets[i];
     move(bullet);
+    if (checkCollision(bullet, enemy)) {
+      hitFlashAnimation(enemy, 100, 500);
+    }
     if (checkCollision(bullet, enemy) || checkOutSide(ctx, bullet)) {
       removeBullet(bullets, i);
       i--;
@@ -158,6 +161,25 @@ function checkCollision(firstGO: IGameObject, secondGO: IGameObject): boolean {
     }
   }
   return result;
+}
+function hitFlashAnimation(gameObject: IGameObject, flashSpeed: number, duration: number) {
+  if (!gameObject.isAnimated) {
+    gameObject.isAnimated = true;
+    const oldColor = gameObject.color;
+    const newColor = "white";
+    const id = setInterval(() => {
+      if (gameObject.color === oldColor) {
+        gameObject.color = newColor;
+      } else {
+        gameObject.color = oldColor;
+      }
+    }, flashSpeed);
+    setTimeout(() => {
+      gameObject.isAnimated = false;
+      gameObject.color = oldColor;
+      clearInterval(id);
+    }, duration);
+  }
 }
 function checkOutSide(ctx: CanvasRenderingContext2D, gO: IGameObject): boolean {
   const xOutSide = gO.pos.x - gO.width / 2 >= ctx.canvas.width || gO.pos.x + gO.width / 2 <= 0;
