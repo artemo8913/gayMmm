@@ -38,7 +38,7 @@ const myUnitDefault: IUnit = {
     x: 40,
     y: 100,
   },
-  delta: 15,
+  delta: 20,
   direction: { x: 0, y: 0 },
 };
 const enemyDefault: IUnit = {
@@ -51,7 +51,7 @@ const enemyDefault: IUnit = {
     x: 250,
     y: 100,
   },
-  delta: 5,
+  delta: 3,
 };
 const bulletSettingsDefault: IBullet = {
   id: "bullet",
@@ -62,7 +62,7 @@ const bulletSettingsDefault: IBullet = {
     x: 5,
     y: 5,
   },
-  delta: 1,
+  delta: 10,
   direction: { x: 1, y: 0 },
 };
 export function GaymPage() {
